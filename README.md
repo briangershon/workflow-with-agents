@@ -6,8 +6,8 @@ Most "agentic" systems hand the agent the wheel: it decides what to do next, wha
 
 ## Learn more
 
-- **[PRINCIPLES.md](./PRINCIPLES.md)** — the durable design principles this project follows, independent of any particular implementation.
-- **[IMPLEMENTATION-EXAMPLE.md](./IMPLEMENTATION-EXAMPLE.md)** — one illustrative example of how those principles could be implemented (using Docker), including an example workflow and proposed file layout.
+- **[docs/PRINCIPLES.md](./docs/PRINCIPLES.md)** — the durable design principles this project follows, independent of any particular implementation.
+- **[docs/IMPLEMENTATION-EXAMPLE.md](./docs/IMPLEMENTATION-EXAMPLE.md)** — one illustrative example of how those principles could be implemented (using Docker), including an example workflow and proposed file layout.
 
 ## Status
 

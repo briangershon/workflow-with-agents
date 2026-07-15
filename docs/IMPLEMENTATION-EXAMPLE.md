@@ -1,6 +1,6 @@
 # Implementation example
 
-This describes one possible concrete implementation of the invariants in [PRINCIPLES.md](./PRINCIPLES.md), using Docker. It's illustrative — a reference for what a first implementation could look like — not a description of code that exists in this repo today. See the [Status](./README.md#status) note in the README.
+This describes one possible concrete implementation of the invariants in [PRINCIPLES.md](./PRINCIPLES.md), using Docker. It's illustrative — a reference for what a first implementation could look like — not a description of code that exists in this repo today. See the [Status](../README.md#status) note in the README.
 
 ## A Docker-based approach
 
