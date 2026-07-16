@@ -2,7 +2,7 @@
 
 One possible concrete implementation of the invariants in [SPEC.md](../SPEC.md), using Docker.
 
-This is **illustrative and non-normative** — a reference for what a first implementation could look like, not a description of code that exists in this repo. It cannot introduce a requirement that isn't already in the spec. No Dockerfiles, Compose file, or Makefile exist here; see the [Status](../README.md#status) note in the README for why that's deliberate.
+This is **illustrative and non-normative** — a reference for what the implementation under [`workflow/`](../workflow) looks like. It cannot introduce a requirement that isn't already in the spec.
 
 ## A Docker-based approach
 
@@ -27,10 +27,7 @@ Other workflows might have more or fewer steps (a build step, a security-scan st
 ## Proposed initial layout
 
 ```
-workflow-with-agents-impl/
-  spec/
-    workflow-with-agents.md   # vendored SPEC.md, pinned to a tag
-  AGENTS.md                   # from templates/AGENTS.md in the spec repo
+workflow/
   docker-compose.yml
   Makefile
   steps/
@@ -42,6 +39,6 @@ workflow-with-agents-impl/
       Dockerfile
 ```
 
-- **`docker-compose.yml`** — defines the shared named volume and one service per step, each mounting that volume and declaring only the environment variables and network access it needs.
-- **`Makefile`** — one target per step (thin wrappers around `docker compose run <step>`), plus a target that runs a full workflow end to end.
-- **`steps/<name>/`** — each step's own Dockerfile and any scripts specific to it. Steps are added by dropping in a new directory and wiring it into `docker-compose.yml` and the `Makefile` — never by widening an existing step. (`INV-COMPOSITION`)
+- **`workflow/docker-compose.yml`** — defines the shared named volume and one service per step, each mounting that volume and declaring only the environment variables and network access it needs.
+- **`workflow/Makefile`** — one target per step (thin wrappers around `docker compose run <step>`), plus a target that runs a full workflow end to end.
+- **`workflow/steps/<name>/`** — each step's own Dockerfile and any scripts specific to it. Steps are added by dropping in a new directory and wiring it into `docker-compose.yml` and the `Makefile` — never by widening an existing step. (`INV-COMPOSITION`)
