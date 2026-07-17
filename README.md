@@ -46,14 +46,6 @@ directly inside `workflow/` for quick single-run local use without installing
 anything — see [workflow/README.md](./workflow/README.md) for those, plus each
 step's exact capability grant and the invariant each one satisfies.
 
-## Versioning
-
-Tagged `vMAJOR.MINOR.PATCH`. Pin to a tag.
-
-- **MAJOR** — an invariant added, removed, or materially changed. Your conformance may break.
-- **MINOR** — a new example, a clarification, or an implementation change under `workflow/`. Conformance unaffected.
-- **PATCH** — wording.
-
 ## Status
 
 `SPEC.md` is stable. A reference implementation now lives alongside it under `workflow/`.
