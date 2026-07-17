@@ -1,6 +1,6 @@
 # workflow-with-agents — specification
 
-These are the durable, binding criteria for `workflow-with-agents` — independent of Docker, Compose, or whatever tooling implements them today. An implementation that satisfies these invariants is "this project." One that doesn't, isn't, no matter what tools it uses.
+These are the durable, binding criteria for `workflow-with-agents` — independent of Docker, Compose, or whatever tooling implements them today. An implementation that satisfies these invariants is "this project." One that doesn't, isn't.
 
 Each invariant states its requirement in one **MUST** sentence. Everything else is rationale.
 
@@ -29,8 +29,7 @@ That last one is the threat model: capability containment, not alignment. An imp
 - **Capability grant** — the exact set of capabilities given to one step, declared in the workflow definition.
 - **Shared-state channel** — the single substrate every step reads from and writes to in order to pass state. The only sanctioned way data crosses a step boundary.
 - **Agentic step** — a step that invokes an AI agent: one whose exact actions are decided at run time by a model.
-- **Consequential step** — a step performing an irreversible or high-trust action: publishing, pushing, deleting, spending, notifying externally.
-- **Consequential credential** — a credential authorizing a consequential action.
+- **Consequential step** — a step performing an irreversible or high-trust action: publishing, pushing, deleting, spending, notifying externally. A **consequential credential** authorizes one.
 
 ## Invariants
 
@@ -49,7 +48,7 @@ An agent invoked inside a step does bounded work. It never decides what happens 
 
 The same workflow definition, run twice, **MUST** execute the same steps in the same order with the same capability grants.
 
-This holds regardless of what an agent inside a step chooses to do internally. Determinism is a property of the workflow, not of the agent.
+Determinism is a property of the workflow, not of the agent.
 
 **Check:** Run one workflow definition twice. Compare the sequence of steps executed and the grant each received.
 **Falsified by:** any run-time input — agent output, wall-clock time, network state — changing which steps run, their order, or their grants.
@@ -65,8 +64,6 @@ Every step **MUST** receive exactly the capabilities its one job requires, and n
 
 Each step **MUST** run in its own sandboxed execution context, able to reach nothing granted to another step.
 
-A compromised or misbehaving step is then bounded by what that one step was granted.
-
 **Check:** For each step, determine what it can reach outside its own grant. The answer is nothing but the shared-state channel.
 **Falsified by:** two steps sharing an execution context; a step reading another's environment or credentials; a mount that reaches outside the sandbox.
 
@@ -74,10 +71,19 @@ A compromised or misbehaving step is then bounded by what that one step was gran
 
 Steps **MUST** pass state through exactly one explicit, inspectable substrate, and through no other.
 
-Ad-hoc state passing — inter-step network calls, manual file shuffling, hidden side channels — makes data flow through the workflow uninspectable end to end.
+Ad-hoc state passing makes data flow through the workflow uninspectable end to end.
 
 **Check:** Enumerate every mechanism by which data crosses a step boundary. Exactly one of them is the shared-state channel.
 **Falsified by:** any second channel — an inter-step network call, a host bind mount, an environment variable carrying a payload, an external bucket.
+
+### INV-NEUTRAL-HANDOFF — A step's handoff must not presume who reads it next
+
+A step **MUST NOT** leave the shared-state channel in a form only a specific later identity or grant can consume.
+
+Ownership, permission bits, and locks cross the step boundary too, not just file contents — presuming a specific reader couples a step to that reader's identity, the mirror image of `INV-ISOLATION`.
+
+**Check:** For each step, confirm what it leaves on the shared channel — ownership, permissions, locks — needs no specific identity to consume.
+**Falsified by:** an ownership or permission change that blocks a later, correctly-scoped step from reading or acting on the shared channel.
 
 ### INV-PRIVILEGE-SEPARATION — Agentic steps hold no consequential credentials
 
@@ -92,8 +98,6 @@ The separation is structural — the credential is *absent* — not procedural. 
 
 Adding capability to a workflow **MUST** take the form of a new, narrowly-scoped step — never a widening of an existing step's grant.
 
-The number and shape of steps is not fixed; a workflow is an arbitrary composition of scoped steps.
-
 **Check:** Review how each step's grant has changed over time. Grants narrow or stay flat; new capability arrives as new steps.
 **Falsified by:** a step whose grant grew to cover a job it didn't originally have.
 
@@ -102,7 +106,7 @@ The number and shape of steps is not fixed; a workflow is an arbitrary compositi
 Choices this project currently makes to satisfy the invariants above — not the invariants themselves. A future version may replace any of them; the `because` is what a replacement must preserve.
 
 - **Docker containers as the isolation boundary** — because a container gives each step its own filesystem, process space, and environment, with a per-step declaration of what enters it (`INV-ISOLATION`).
-- **A Docker named volume as the shared-state channel** — because it is singular, mounted identically into every step, and inspectable from outside the steps without leaving the machine. A replacement must keep all three. An object store, for example, gives up local inspectability and forces network egress plus credentials into every step's grant, gutting `INV-LEAST-PRIVILEGE`.
+- **A Docker named volume as the shared-state channel** — because it is singular, mounted identically into every step, and inspectable from outside the steps without leaving the machine (`INV-SHARED-STATE`, `INV-NEUTRAL-HANDOFF`).
 - **Docker Compose as the composition layer** — because it declares every step and its grant in one file, outside any agent, in version control (`INV-WORKFLOW-AUTHORITY`).
 - **A Makefile as the run interface** — because it fixes step order in version-controlled text rather than in an operator's memory (`INV-DETERMINISM`).
 
