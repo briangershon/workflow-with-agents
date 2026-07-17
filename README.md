@@ -12,6 +12,31 @@ This repo holds the **specification** and a reference implementation of it, side
 
 To check an implementation (this one or another) against the spec, follow the [Conformance](./SPEC.md#conformance) section: walk the invariant IDs, run each **Check**, and cite the evidence.
 
+## Running the reference implementation
+
+`workflow/` is a three-step pipeline — clone, agent, diff — that clones a repo,
+runs an AI agent against it with instructions you give, and lets you inspect the
+resulting `git diff` before deciding what to do next.
+
+Prerequisites: Docker (Desktop, on macOS), an ssh key with clone access to the
+target repo, and an `ANTHROPIC_API_KEY`.
+
+```sh
+ssh-add ~/.ssh/<your-key>          # load your key into the host ssh-agent
+cd workflow
+export ANTHROPIC_API_KEY=...
+
+make workflow \
+  REPO_URL=git@github.com:org/repo.git \
+  PROMPT="add input validation to the signup form"
+
+make diff                          # opens a shell on the shared volume; run `git diff`
+make clean                         # tears down the volume before the next run
+```
+
+See [workflow/README.md](./workflow/README.md) for each step's exact capability
+grant and the invariant each one satisfies.
+
 ## Versioning
 
 Tagged `vMAJOR.MINOR.PATCH`. Pin to a tag.
