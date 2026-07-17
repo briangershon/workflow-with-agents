@@ -4,7 +4,9 @@
 export REPO_URL
 export PROMPT
 
-.PHONY: clone agent diff workflow clean
+PREFIX ?= /usr/local
+
+.PHONY: clone agent diff workflow clean install uninstall
 
 clone:
 	@test -n "$(REPO_URL)" || (echo "REPO_URL is required, e.g. make clone REPO_URL=git@github.com:org/repo.git" && exit 1)
@@ -23,3 +25,13 @@ workflow: clone agent
 
 clean:
 	docker compose down -v
+
+# Symlinked (not copied) so edits to bin/workflow-agent take effect
+# immediately, without reinstalling.
+install:
+	mkdir -p $(PREFIX)/bin
+	ln -sf $(CURDIR)/bin/workflow-agent $(PREFIX)/bin/workflow-agent
+	@echo "Installed: $(PREFIX)/bin/workflow-agent -> $(CURDIR)/bin/workflow-agent"
+
+uninstall:
+	rm -f $(PREFIX)/bin/workflow-agent

@@ -35,6 +35,47 @@ make clean                         # tears down the named volume before the next
 `INV-WORKFLOW-AUTHORITY`). Each can also be run on its own: `make clone
 REPO_URL=...`, `make agent PROMPT=...`.
 
+## Installing as a CLI
+
+`make workflow` is fine for one run at a time in one checkout, but it shares a
+single hardcoded volume name (`repo`) — a second concurrent invocation would
+collide with the first. `bin/workflow-agent` wraps the same steps with a
+unique Compose project name per invocation, so any number of runs — different
+repos, different prompts, or both — can proceed at once without interfering.
+
+Install it onto `PATH`:
+
+```sh
+make install                  # symlinks bin/workflow-agent into /usr/local/bin
+make install PREFIX=~/.local  # or any other prefix
+```
+
+Then, from anywhere:
+
+```sh
+workflow-agent run --repo git@github.com:org/repo.git \
+                    --prompt "add input validation to the signup form"
+# Run complete. Run ID: 20260717151530-4821
+#   Inspect:  workflow-agent diff  --run-id 20260717151530-4821
+#   Clean up: workflow-agent clean --run-id 20260717151530-4821
+
+workflow-agent diff  --run-id 20260717151530-4821
+workflow-agent clean --run-id 20260717151530-4821
+```
+
+Each run ID becomes the Docker Compose project name (`workflow-agent-<id>`),
+which namespaces that run's `repo` volume as `workflow-agent-<id>_repo` —
+Compose does this automatically, so `docker-compose.yml` itself needed no
+changes. This is an implementation-specific choice, not a spec requirement:
+it doesn't add capability or change any step's grant, it only keeps
+`INV-SHARED-STATE`'s one channel from being accidentally shared *across* runs
+the way it's deliberately shared *within* one run.
+
+`make uninstall` (optionally with the same `PREFIX`) removes the symlink.
+
+To run many jobs at once with bounded concurrency, see
+`../examples/batch-run.md`.
+
 ## Steps and their grants
 
 | step  | holds                                   | runs an agent | INV citations |
