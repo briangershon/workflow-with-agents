@@ -1,0 +1,40 @@
+volumes:
+  # The one substrate every step reads from and writes to.
+  # INV-SHARED-STATE: exactly one shared-state channel, mounted identically into
+  # every step below, and no other mechanism (network calls, bind mounts, env
+  # payloads) crosses a step boundary.
+  repo:
+
+services:
+  # INV-ISOLATION: each step is its own container/image, granted only what its one
+  # job needs (INV-LEAST-PRIVILEGE). Nothing here is reachable by another service
+  # except through the `repo` volume.
+  clone:
+    build: ./steps/clone
+    environment:
+      - REPO_URL
+      # Docker Desktop forwards the host ssh-agent at this fixed path on macOS.
+      - SSH_AUTH_SOCK=/ssh-agent
+    volumes:
+      - repo:/repo
+      - /run/host-services/ssh-auth.sock:/ssh-agent
+    # No ANTHROPIC_API_KEY, no agent runtime image: this step only ever clones.
+
+  agent:
+    build: ./steps/agent
+    environment:
+      - PROMPT
+      - ANTHROPIC_API_KEY
+    volumes:
+      - repo:/repo
+    # INV-PRIVILEGE-SEPARATION: this step runs an agent and holds no ssh key, no
+    # git push credential, and no ssh-agent mount of any kind.
+
+  diff:
+    build: ./steps/diff
+    volumes:
+      - repo:/repo
+    stdin_open: true
+    tty: true
+    # No credentials, no agent runtime: just an interactive shell onto the shared
+    # volume so you can run `git diff` yourself.
