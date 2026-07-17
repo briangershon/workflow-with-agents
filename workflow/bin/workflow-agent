@@ -1,0 +1,86 @@
+#!/bin/sh
+# INV-WORKFLOW-AUTHORITY / INV-DETERMINISM: step order (clone before agent) is
+# fixed here, in version-controlled text, not in an operator's memory or an
+# agent's output — the same guarantee workflow/Makefile provides, extended
+# with a per-invocation Compose project name so concurrent runs (different
+# repos, different prompts, or both) each get their own isolated `repo`
+# volume instead of colliding on one shared name.
+set -eu
+
+prog=$(basename "$0")
+
+usage() {
+  cat >&2 <<EOF
+Usage:
+  $prog run --repo <url> --prompt "<text>" [--run-id <id>]
+  $prog diff --run-id <id>
+  $prog clean --run-id <id>
+EOF
+  exit 1
+}
+
+# Resolve this script's real path (symlink-safe, so `make install` can
+# symlink it onto PATH) to find the sibling docker-compose.yml. macOS's
+# BSD readlink has no -f, so use perl's Cwd::abs_path instead.
+script_path=$(perl -MCwd -e 'print Cwd::abs_path(shift)' "$0")
+workflow_dir=$(dirname "$(dirname "$script_path")")
+compose_file="$workflow_dir/docker-compose.yml"
+
+[ -f "$compose_file" ] || {
+  echo "error: cannot find docker-compose.yml at $compose_file" >&2
+  exit 1
+}
+
+new_run_id() {
+  echo "$(date +%Y%m%d%H%M%S)-$$"
+}
+
+compose() {
+  docker compose -p "workflow-agent-$run_id" -f "$compose_file" "$@"
+}
+
+[ $# -ge 1 ] || usage
+cmd=$1
+shift
+
+repo=""
+prompt=""
+run_id=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --repo) repo=$2; shift 2 ;;
+    --prompt) prompt=$2; shift 2 ;;
+    --run-id) run_id=$2; shift 2 ;;
+    *) echo "error: unknown argument: $1" >&2; usage ;;
+  esac
+done
+
+case "$cmd" in
+  run)
+    [ -n "$repo" ] || { echo "error: --repo is required" >&2; usage; }
+    [ -n "$prompt" ] || { echo "error: --prompt is required" >&2; usage; }
+    [ -n "$run_id" ] || run_id=$(new_run_id)
+    export REPO_URL="$repo"
+    export PROMPT="$prompt"
+    compose run --rm clone
+    compose run --rm agent
+    cat <<EOF
+
+Run complete. Run ID: $run_id
+  Inspect:  $prog diff  --run-id $run_id
+  Clean up: $prog clean --run-id $run_id
+EOF
+    ;;
+  diff)
+    [ -n "$run_id" ] || { echo "error: --run-id is required" >&2; usage; }
+    compose run --rm diff
+    ;;
+  clean)
+    [ -n "$run_id" ] || { echo "error: --run-id is required" >&2; usage; }
+    compose down -v
+    ;;
+  *)
+    usage
+    ;;
+esac
