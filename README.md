@@ -21,21 +21,30 @@ resulting `git diff` before deciding what to do next.
 Prerequisites: Docker (Desktop, on macOS), an ssh key with clone access to the
 target repo, and an `ANTHROPIC_API_KEY`.
 
+Install the `workflow-agent` CLI once, then run it from anywhere — each run
+gets its own ID, so multiple runs (different repos, different prompts, or
+both) can proceed at once without colliding:
+
 ```sh
 ssh-add ~/.ssh/<your-key>          # load your key into the host ssh-agent
-cd workflow
 export ANTHROPIC_API_KEY=...
 
-make workflow \
-  REPO_URL=git@github.com:org/repo.git \
-  PROMPT="add input validation to the signup form"
+cd workflow && make install        # symlinks workflow-agent onto PATH
 
-make diff                          # opens a shell on the shared volume; run `git diff`
-make clean                         # tears down the volume before the next run
+workflow-agent run --repo git@github.com:org/repo.git \
+                    --prompt "add input validation to the signup form"
+
+workflow-agent diff  --run-id <id> # printed by `run`; opens a shell to inspect `git diff`
+workflow-agent clean --run-id <id> # tears down that run's volume
 ```
 
-See [workflow/README.md](./workflow/README.md) for each step's exact capability
-grant and the invariant each one satisfies.
+Running several jobs at once with bounded concurrency:
+[examples/batch-run.md](./examples/batch-run.md).
+
+The underlying `make workflow`/`make diff`/`make clean` targets still work
+directly inside `workflow/` for quick single-run local use without installing
+anything — see [workflow/README.md](./workflow/README.md) for those, plus each
+step's exact capability grant and the invariant each one satisfies.
 
 ## Versioning
 

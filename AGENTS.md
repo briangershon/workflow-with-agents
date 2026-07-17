@@ -8,6 +8,7 @@ This repo holds the normative **specification**, plus a reference implementation
 - **Every invariant needs exactly one MUST sentence, plus a Check and a Falsified-by.** The MUST is the binding assertion; everything else is rationale. If you can't compress it to one testable sentence, it isn't an invariant yet.
 - **Implementation choices never enter `SPEC.md`.** Anything naming Docker, Compose, or a specific tool belongs in `examples/`. The exception is the "What's implementation-specific" section, which exists precisely to quarantine them.
 - **`examples/` is non-normative.** It MUST NOT introduce a requirement that isn't already in `SPEC.md`.
+- **Root `README.md` must stay current with `workflow/`'s actual interface.** When a change under `workflow/` alters how it's installed or invoked (new commands, changed flags, a new entry point), update `README.md` in the same change — don't leave it describing a prior interface.
 
 ## Versioning
 
